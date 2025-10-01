@@ -1,0 +1,35 @@
+name: CD - Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get short SHA for image tag
+        id: get_sha
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ secrets.RESOURCE_GROUP_NAME }}
+          cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
+
+      - name: Deploy to Production AKS
+        run: |
+          echo "Deploying to production"
+          kubectl set image deployment/my-app-deployment my-app-container=${{ secrets.ACR_LOGIN_SERVER }}/my-app:${{ steps.get_sha.outputs.sha_short }}
+          kubectl rollout status deployment/my-app-deployment
