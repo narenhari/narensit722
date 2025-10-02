@@ -20,12 +20,25 @@ variable "resource_group_name" {
 
 variable "docker_image" {
   type        = string
-  description = "The full name of the Docker image to deploy (e.g., myacr.azurecr.io/my-app:tag)."
+  description = "The full name of the Docker image to deploy."
 }
 
-# Create a resource group if it doesn't exist
+# --- NEW VARIABLES FOR ACR CREDENTIALS ---
+variable "acr_username" {
+  type        = string
+  description = "The admin username for the ACR."
+  sensitive   = true
+}
+
+variable "acr_password" {
+  type        = string
+  description = "The admin password for the ACR."
+  sensitive   = true
+}
+
+# Define the resource group
 resource "azurerm_resource_group" "rg" {
-  name     = "sit722-staging-rg" # A dedicated resource group for staging
+  name     = "sit722-staging-rg"
   location = "Australia East"
 }
 
@@ -35,13 +48,20 @@ resource "azurerm_container_group" "staging_app" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
+  # --- NEW BLOCK FOR EXPLICIT CREDENTIALS ---
+  image_registry_credential {
+    server   = "narenacr722.azurecr.io"
+    username = var.acr_username
+    password = var.acr_password
+  }
+
   ip_address_type = "Public"
-  dns_name_label  = "sit722-staging-app-${random_id.unique.hex}" # Creates a unique URL
+  dns_name_label  = "sit722-staging-app-${random_id.unique.hex}"
   os_type         = "Linux"
 
   container {
     name   = "my-app-container"
-    image  = var.docker_image # Uses the image built in the CI step
+    image  = var.docker_image
     cpu    = "1"
     memory = "1.5"
     ports {

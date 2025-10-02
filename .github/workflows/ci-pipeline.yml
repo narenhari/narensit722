@@ -58,6 +58,15 @@ jobs:
         id: acr
         run: echo "server=$(az acr show --name narenacr722 --query loginServer --output tsv)" >> $GITHUB_OUTPUT
 
+      # --- NEW STEP TO GET ACR CREDENTIALS ---
+      - name: Get ACR Credentials
+        id: acr_creds
+        run: |
+          ACR_USERNAME=$(az acr credential show --name narenacr722 --query "username" -o tsv)
+          ACR_PASSWORD=$(az acr credential show --name narenacr722 --query "passwords[0].value" -o tsv)
+          echo "username=$ACR_USERNAME" >> $GITHUB_OUTPUT
+          echo "password=$ACR_PASSWORD" >> $GITHUB_OUTPUT
+
       - name: Setup OpenTofu
         uses: opentofu/setup-opentofu@v1
         with:
@@ -71,9 +80,12 @@ jobs:
         env:
           FULL_IMAGE_NAME: ${{ steps.acr.outputs.server }}/my-app:${{ needs.build-test-push.outputs.image_tag }}
         run: |
+          # --- UPDATED TO PASS NEW CREDENTIAL VARIABLES ---
           tofu apply -auto-approve \
             -var="resource_group_name=${{ secrets.RESOURCE_GROUP_NAME }}" \
-            -var="docker_image=${{ env.FULL_IMAGE_NAME }}"
+            -var="docker_image=${{ env.FULL_IMAGE_NAME }}" \
+            -var="acr_username=${{ steps.acr_creds.outputs.username }}" \
+            -var="acr_password=${{ steps.acr_creds.outputs.password }}"
         working-directory: ./infra
 
   destroy-staging:
