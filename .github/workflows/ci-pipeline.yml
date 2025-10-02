@@ -46,7 +46,7 @@ jobs:
     needs: build-test-push 
     environment: Staging
     env:
-      FULL_IMAGE_NAME: narenacr722.azurecr.io/my-app:${{ needs.build-test-push.outputs.image_tag }}
+      FULL_IMAGE_NAME: ${{ secrets.ACR_LOGIN_SERVER }}/my-app:${{ needs.build-test-push.outputs.image_tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
