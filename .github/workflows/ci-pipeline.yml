@@ -54,7 +54,6 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # --- NEW STEP TO GET SERVER NAME DYNAMICALLY ---
       - name: Get ACR Login Server
         id: acr
         run: echo "server=$(az acr show --name narenacr722 --query loginServer --output tsv)" >> $GITHUB_OUTPUT
@@ -69,7 +68,6 @@ jobs:
         working-directory: ./infra
 
       - name: Tofu Apply
-        # This step now uses the output from the "Get ACR Login Server" step
         env:
           FULL_IMAGE_NAME: ${{ steps.acr.outputs.server }}/my-app:${{ needs.build-test-push.outputs.image_tag }}
         run: |
