@@ -87,7 +87,7 @@ jobs:
             -var="acr_password=${{ steps.acr_creds.outputs.password }}"
         working-directory: ./infra
 
-destroy-staging:
+  destroy-staging:
     runs-on: ubuntu-latest
     needs: deploy-staging
     if: always()
