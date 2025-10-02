@@ -43,10 +43,8 @@ jobs:
 ###
   deploy-staging:
     runs-on: ubuntu-latest
-    needs: build-test-push 
+    needs: build-test-push
     environment: Staging
-    env:
-      FULL_IMAGE_NAME: ${{ secrets.ACR_LOGIN_SERVER }}/my-app:${{ needs.build-test-push.outputs.image_tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -56,8 +54,10 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Debug Image Name
-        run: echo "The full image name is ${{ env.FULL_IMAGE_NAME }}"
+      # --- NEW STEP TO GET SERVER NAME DYNAMICALLY ---
+      - name: Get ACR Login Server
+        id: acr
+        run: echo "server=$(az acr show --name narenacr722 --query loginServer --output tsv)" >> $GITHUB_OUTPUT
 
       - name: Setup OpenTofu
         uses: opentofu/setup-opentofu@v1
@@ -69,8 +69,10 @@ jobs:
         working-directory: ./infra
 
       - name: Tofu Apply
+        # This step now uses the output from the "Get ACR Login Server" step
+        env:
+          FULL_IMAGE_NAME: ${{ steps.acr.outputs.server }}/my-app:${{ needs.build-test-push.outputs.image_tag }}
         run: |
-          # The -var flag now uses the environment variable
           tofu apply -auto-approve \
             -var="resource_group_name=${{ secrets.RESOURCE_GROUP_NAME }}" \
             -var="docker_image=${{ env.FULL_IMAGE_NAME }}"
