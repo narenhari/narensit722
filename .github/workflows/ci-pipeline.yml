@@ -40,7 +40,7 @@ jobs:
         run: |
           docker build . -t ${{ secrets.ACR_LOGIN_SERVER }}/my-app:${{ steps.get_sha.outputs.sha_short }}
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/my-app:${{ steps.get_sha.outputs.sha_short }}
-###
+#####
   deploy-staging:
     runs-on: ubuntu-latest
     needs: build-test-push 
